@@ -23,7 +23,7 @@ export const app = express();
 
 // / 1. Grant global origin permissions to your React App port
 app.use(cors({
-  origin: 'http://localhost:5173', 
+  origin: 'https://daved-work.vercel.app/', 
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));

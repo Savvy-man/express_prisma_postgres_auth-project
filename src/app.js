@@ -21,9 +21,14 @@ import { auditRoutes } from "./routes/auditRoutes.js";
 
 export const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://daved-work.vercel.app",   // no trailing slash
+];
+
 // / 1. Grant global origin permissions to your React App port
 app.use(cors({
-  origin: 'https://daved-work.vercel.app/', 
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));

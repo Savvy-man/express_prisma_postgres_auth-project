@@ -1,5 +1,5 @@
-import { Router } from "express";
-import { prisma } from "../config/db.js";
+import  Router  from "express";
+import  {prisma } from "../config/db.js";
 import {
   change_password,
   login,
@@ -7,6 +7,9 @@ import {
   register,
 } from "../controllers/authControllers.js";
 import { auth_middleware } from "../middlewares/authMiddleware.js";
+
+
+
 
 export const authRoutes = Router();
 

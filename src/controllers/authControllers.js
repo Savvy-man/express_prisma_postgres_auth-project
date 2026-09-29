@@ -1,9 +1,11 @@
-import { prisma } from "../config/db.js";
+import  { prisma } from "../config/db.js";
 import bcrypt from "bcrypt";
 import { generate_jwt } from "../middlewares/authMiddleware.js";
 import { messenger } from "../config/email.js";
 
 export const register = async (req, res) => {
+    console.log("➡️ Hey! The register route was successfully triggered! Body:", req.body);
+
   try {
     // get values from user form
     const { name, email, password } = req.body;
@@ -14,17 +16,32 @@ export const register = async (req, res) => {
     }
 
     // check if user already exist
+
+     // 2. Safely fall back to check both prisma.user and prisma.User casing
+    const userModel = prisma.user || prisma.User;
+    if (!userModel) {
+      console.error("💥 ERROR: User model is completely missing from the Prisma instance.");
+      return res.status(500).json({ 
+        message: "Internal Server Error", 
+        errorDetail: "Database schema mapping mismatch. Check your schema.prisma file." 
+      });
+    }
+    
     const exist_user = await prisma.user.findUnique({ where: { email } });
-    // if (exist_user)
-    //   return res.status(400).json({ message: "user already exist" });
+    if (exist_user)
+      return res.status(400).json({ message: "user already exist" });
 
     // hash the password
     const hashed_password = await bcrypt.hash(password, 5);
 
     // save user to db
-    // const user = await prisma.user.create({
-    //   data: { name, email, password: hashed_password },
-    // });
+   const newUser = await prisma.user.create({ 
+  data: {
+    name,
+    email,
+    password: hashed_password
+  }
+})
 
     // send otp
     messenger.sendMail(
@@ -33,17 +50,28 @@ export const register = async (req, res) => {
         subject: "User Registration",
         text: `hello ${name}, your account has been registered successfully`,
       },
-      (err, info) => console.log("email status:", info),
+      (err, info) => {
+    if (err) {
+      console.log("❌ Email sending failed:", err.message);
+    } else {
+      console.log("📧 Email status:", info);
+    }
+  }
     );
 
     // console.log("email sent");
 
     // return successful
     // return res.sendStatus(201);
-    return res.status(201).json({ message: "created", data: user });
-  } catch (error) {
-    console.log("[/register] error: ", error.message);
-    return res.sendStatus(500);
+return res.status(201).json({ message: "created", data: newUser });  }catch (error) {
+    // 1. This forces Node to print the FULL error stack trace in your terminal
+    console.dir(error, { depth: null }); 
+    
+    // 2. This sends the error message directly back to Postman so you can see it instantly
+    return res.status(500).json({ 
+      message: "Internal Server Error", 
+      errorDetail: error.message || String(error) 
+    });
   }
 };
 
@@ -78,7 +106,7 @@ export const login = async (req, res) => {
     return res.status(200).json({ token });
   } catch (error) {
     console.log("[/login] error: ", error.message);
-    return res.sendStatus(500);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
 
